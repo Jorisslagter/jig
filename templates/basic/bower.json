@@ -12,8 +12,8 @@
   ],
   "private": true,
   "dependencies": {
+    "jig": "%JIG_PATH%/",
     "requirejs": "^2.2.0",
-    "pixi.js": "^3.0.10",
-    "jig": "%JIG_PATH%/lib/"
+    "pixi.js": "^3.0.10"
   }
 }

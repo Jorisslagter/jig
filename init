@@ -4,15 +4,31 @@ var fs = require('fs');
 var path = require('path');
 var prompt = require('prompt');
 var spawn = require('child_process').spawn;
-var npm = require('npm');
-var bower = require('bower');
+
+if ((process.argv[2] && (['-h', '--help', '/?'].indexOf(process.argv[2]) != -1)) || (process.argv.length == 2)) {
+  var help = [
+    "JIG project initialization utility",
+    "Usage:",
+    "./init basic [project-path] \t initialize project in [project path] using 'basic' template",
+    "./init --help \t\t\t display this information",
+    "./init --info [template-name] \t display information about the specific template"
+  ];
+  
+  console.log(help.join("\n"));
+  process.exit();
+}
+
+if(process.argv[2] && (process.argv[2] === '--info')) {
+  console.log("TODO");
+  process.exit();
+}
 
 var template = process.argv[2] || 'basic';
 var target_dir = process.argv[3] || process.cwd();
 var template_base = __dirname + path.sep + 'templates' + path.sep + template;
 
 var variables = {
-  'GAME_NAME': 'Untitled Game',
+  'GAME_NAME': 'JIG Game',
   'JS_PATH': 'js',
   'AUTHOR': 'John Doe',
   'JIG_PATH': __dirname
@@ -100,22 +116,30 @@ var init_game = function() {
   dive(".", function() {
     console.log("All files are copied.");
     console.log("Installing bower dependencies...");
-    process.chdir(target_dir);
-    bower.commands.install().on('end', function(installed) {
-      console.log("bower dependencies installed");
-      console.log("Installing node.js dependencies...")
-      
-      var npm_install = spawn("npm", ["install"]);
-      
-      npm_install.stdout.on('data', function(out) {
-        console.log(out.toString());
-      });
-      
-      npm_install.on('exit', function(code) {
-        if(code == 0) {
-          console.log("Your project is ready! 'cd' to the directory of your project and run 'gulp' to start a webserver");
-        }
-      });
+    
+    var bower = spawn('bower', ['install', '-s'], {cwd: target_dir});
+    
+    bower.stdout.pipe(process.stdout);
+    
+    bower.on('close', function(code) {
+      if(code == 0) {
+        console.log("bower dependencies installed (code %d)", code);
+        console.log("Installing node.js dependencies...");
+        
+        var npm = spawn('npm', ['install'], {cwd: target_dir});
+        
+        npm.stdout.pipe(process.stdout);
+        
+        npm.on('close', function(code) {
+          if(code == 0) {
+            console.log("Your project is ready! 'cd' to the directory of your project and run 'gulp' to start a webserver (code: %d)", code);
+          } else {
+            console.error("Something gone wrong while installing node.js dependencies...");
+          }
+        });
+      } else {
+        console.error('Something gone wrong while installing bower dependencies...');
+      }
     });
   });
 }
@@ -132,17 +156,26 @@ prompt.get({
       description: 'Enter the name of your game',
       type: 'string',
       default: variables['GAME_NAME']
+    },
+    author_name: {
+      description: 'Author',
+      type: 'string',
+      default: variables['AUTHOR']
     }
   }
 }, function(err, result) {
-  if(err) return;
+  if (err) {
+    throw err;
+    return;
+  }
   
-  if((result.length) && (result.create[0].toLowerCase() !== 'y')) {
+  if ((result.length) && (result.create[0].toLowerCase() !== 'y')) {
     return;
   }
   
   target_dir = result.target_dir;
   variables['GAME_NAME'] = result.game_name;
+  variables['AUTHOR'] = result.author_name;
   
   init_game();
 });

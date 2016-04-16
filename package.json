@@ -17,11 +17,9 @@
   },
   "homepage": "https://github.com/miriti/jig#readme",
   "dependencies": {
-    "bower": "^1.7.7",
     "gulp": "^3.9.0",
     "gulp-webserver": "^0.9.1",
     "js-beautify": "^1.5.10",
-    "npm": "^3.8.3",
     "prompt": "^1.0.0"
   }
 }
